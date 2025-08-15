@@ -1,167 +1,191 @@
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PWA Stok Barang</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pencatatan Stok Barang</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#4CAF50"/>
 </head>
 <body>
+  <header>
     <h1>📦 Pencatatan Stok Barang</h1>
+  </header>
 
-    <div class="input-area">
-        <input type="text" id="itemName" placeholder="Nama barang">
-        <input type="number" id="itemQty" placeholder="Jumlah">
-        <button id="addBtn">Tambah</button>
-        <button id="voiceBtn">🎤 Input Suara</button>
-    </div>
+  <main>
+    <form id="barangForm">
+      <input type="text" id="namaBarang" placeholder="Nama barang" required>
+      <input type="number" id="jumlahBarang" placeholder="Jumlah" required>
+      <button type="button" id="voiceBtn">🎤</button>
+      <button type="submit">Tambah</button>
+    </form>
 
-    <h2>Daftar Stok</h2>
+    <h2>Daftar Barang</h2>
     <table>
-        <thead>
-            <tr>
-                <th>Barang</th>
-                <th>Jumlah</th>
-            </tr>
-        </thead>
-        <tbody id="stockList"></tbody>
+      <thead>
+        <tr>
+          <th>Nama</th>
+          <th>Jumlah</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="barangList"></tbody>
     </table>
+  </main>
 
-    <script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
 body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
+  font-family: sans-serif;
+  margin: 0;
+  background: #f4f4f4;
 }
-h1 {
-    text-align: center;
+
+header {
+  background: #4CAF50;
+  padding: 1rem;
+  color: white;
+  text-align: center;
 }
-.input-area {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+
+form {
+  display: flex;
+  gap: 5px;
+  padding: 10px;
 }
+
 input, button {
-    padding: 10px;
-    font-size: 16px;
+  padding: 8px;
+  font-size: 1rem;
 }
+
 table {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  margin-top: 10px;
 }
+
 th, td {
-    border: 1px solid #ccc;
-    padding: 8px;
-    text-align: center;
-}
-let db;
-const request = indexedDB.open("stokBarangDB", 1);
-
-request.onupgradeneeded = function(e) {
-    db = e.target.result;
-    if (!db.objectStoreNames.contains("stok")) {
-        db.createObjectStore("stok", { keyPath: "nama" });
-    }
-};
-
-request.onsuccess = function(e) {
-    db = e.target.result;
-    loadStock();
-};
-
-document.getElementById("addBtn").addEventListener("click", addStock);
-document.getElementById("voiceBtn").addEventListener("click", startVoice);
-
-function addStock() {
-    const nama = document.getElementById("itemName").value.trim();
-    const qty = parseInt(document.getElementById("itemQty").value);
-    if (!nama || isNaN(qty)) return;
-
-    const tx = db.transaction("stok", "readwrite");
-    const store = tx.objectStore("stok");
-    store.get(nama).onsuccess = function(e) {
-        let data = e.target.result || { nama, jumlah: 0 };
-        data.jumlah += qty;
-        store.put(data);
-        loadStock();
-    };
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
 }
 
-function loadStock() {
-    const tx = db.transaction("stok", "readonly");
-    const store = tx.objectStore("stok");
-    const list = document.getElementById("stockList");
-    list.innerHTML = "";
-
-    store.openCursor().onsuccess = function(e) {
-        const cursor = e.target.result;
-        if (cursor) {
-            const row = `<tr><td>${cursor.value.nama}</td><td>${cursor.value.jumlah}</td></tr>`;
-            list.innerHTML += row;
-            cursor.continue();
-        }
-    };
+button {
+  cursor: pointer;
 }
 
-function startVoice() {
-    if (!('webkitSpeechRecognition' in window)) {
-        alert("Browser tidak mendukung input suara");
-        return;
-    }
-    const recognition = new webkitSpeechRecognition();
+#voiceBtn {
+  background: #ff9800;
+  color: white;
+  border: none;
+}
+// Load data dari localStorage
+let barang = JSON.parse(localStorage.getItem("barangList")) || [];
+
+const form = document.getElementById("barangForm");
+const namaBarang = document.getElementById("namaBarang");
+const jumlahBarang = document.getElementById("jumlahBarang");
+const barangList = document.getElementById("barangList");
+const voiceBtn = document.getElementById("voiceBtn");
+
+// Render data
+function renderBarang() {
+  barangList.innerHTML = "";
+  barang.forEach((item, index) => {
+    let row = `<tr>
+      <td>${item.nama}</td>
+      <td>${item.jumlah}</td>
+      <td><button onclick="hapusBarang(${index})">Hapus</button></td>
+    </tr>`;
+    barangList.innerHTML += row;
+  });
+}
+
+// Tambah data
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  barang.push({ nama: namaBarang.value, jumlah: parseInt(jumlahBarang.value) });
+  localStorage.setItem("barangList", JSON.stringify(barang));
+  namaBarang.value = "";
+  jumlahBarang.value = "";
+  renderBarang();
+});
+
+// Hapus data
+function hapusBarang(index) {
+  barang.splice(index, 1);
+  localStorage.setItem("barangList", JSON.stringify(barang));
+  renderBarang();
+}
+
+// Input suara
+voiceBtn.addEventListener("click", () => {
+  if ('webkitSpeechRecognition' in window) {
+    let recognition = new webkitSpeechRecognition();
     recognition.lang = "id-ID";
-    recognition.onresult = function(event) {
-        const hasil = event.results[0][0].transcript;
-        const match = hasil.match(/tambah (\d+) (.+)/i);
-        if (match) {
-            document.getElementById("itemName").value = match[2];
-            document.getElementById("itemQty").value = match[1];
-            addStock();
-        } else {
-            alert("Format suara: 'Tambah 5 paku'");
-        }
-    };
     recognition.start();
-}
-
-// Registrasi service worker
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js");
-}
-self.addEventListener("install", event => {
-    event.waitUntil(
-        caches.open("stok-cache").then(cache => {
-            return cache.addAll([
-                "/",
-                "/index.html",
-                "/style.css",
-                "/app.js"
-            ]);
-        })
-    );
+    recognition.onresult = function(event) {
+      namaBarang.value = event.results[0][0].transcript;
+    };
+  } else {
+    alert("Browser tidak mendukung input suara.");
+  }
 });
 
-self.addEventListener("fetch", event => {
-    event.respondWith(
-        caches.match(event.request).then(response => {
-            return response || fetch(event.request);
-        })
-    );
-});
+// Panggil render pertama
+renderBarang();
+
+// PWA Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
 {
-    "name": "PWA Stok Barang",
-    "short_name": "StokBarang",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "description": "Aplikasi pencatatan stok barang offline dengan input suara",
-    "icons": [
-        {
-            "src": "icon.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        }
-    ]
+  "name": "Pencatatan Stok Barang",
+  "short_name": "StokBarang",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4CAF50",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
+const CACHE_NAME = "stok-barang-cache-v1";
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/style.css',
+  '/app.js',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(response => response || fetch(event.request))
+  );
+});
