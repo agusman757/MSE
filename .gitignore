@@ -1,34 +1,360 @@
-# Gradle files
-.gradle/
-build/
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manajemen Stok Barang (AI Voice)</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>📦 Manajemen Stok Barang dengan Suara</h1>
+    <p>Sistem pencatatan pemasukan & pengeluaran barang dengan input suara, filter tanggal, dan ekspor Excel.<br/>Mudah, rapi, dan modern.</p>
+  </header>
 
-# Local configuration file (sdk path, etc)
-local.properties
+  <main>
+    <section class="form-section">
+      <form id="transaksiForm" autocomplete="off">
+        <select id="jenisTransaksi" required>
+          <option value="masuk">Barang Masuk</option>
+          <option value="keluar">Barang Keluar</option>
+        </select>
+        <input type="text" id="namaBarang" placeholder="Nama barang" required />
+        <input type="number" id="jumlahBarang" placeholder="Jumlah" min="1" required />
+        <button type="button" id="voiceBtn" title="Input suara">🎤</button>
+        <button type="submit">Tambah</button>
+      </form>
+    </section>
 
-# Log/OS Files
-*.log
+    <section class="filter-section">
+      <label>Filter tanggal: </label>
+      <input type="date" id="filterStart" />
+      <span>-</span>
+      <input type="date" id="filterEnd" />
+      <button type="button" id="resetFilter">Reset</button>
+      <button type="button" id="exportExcel">Ekspor Excel</button>
+    </section>
 
-# Android Studio generated files and folders
-captures/
-.externalNativeBuild/
-.cxx/
-*.aab
-*.apk
-output-metadata.json
+    <section>
+      <h2>📋 Riwayat Transaksi</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Jenis</th>
+            <th>Nama Barang</th>
+            <th>Jumlah</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="transaksiList"></tbody>
+      </table>
+    </section>
 
-# IntelliJ
-*.iml
-.idea/
-misc.xml
-deploymentTargetDropDown.xml
-render.experimental.xml
+    <section>
+      <h2>📊 Rekapitulasi Stok</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nama Barang</th>
+            <th>Stok Saat Ini</th>
+          </tr>
+        </thead>
+        <tbody id="rekapList"></tbody>
+      </table>
+    </section>
+  </main>
 
-# Keystore files
-*.jks
-*.keystore
+  <footer>
+    <small>© 2025 agusman757 — Sistem Pencatatan Stok dengan AI Voice</small>
+  </footer>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  background: #f8f9fa;
+  color: #222;
+}
+header {
+  background: #3f51b5;
+  color: #fff;
+  padding: 1.5rem 1rem 1rem 1rem;
+  text-align: center;
+  box-shadow: 0 2px 8px #0001;
+}
+header h1 {
+  margin: 0 0 0.5rem 0;
+}
+main {
+  max-width: 700px;
+  margin: 2rem auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px #0002;
+  padding: 2rem 1.5rem;
+}
+.form-section {
+  margin-bottom: 2rem;
+}
+.filter-section {
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+form {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+select, input, button {
+  padding: 0.5rem 0.7rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+button[type="submit"] {
+  background: #3f51b5;
+  color: #fff;
+  border: none;
+  transition: background 0.2s;
+}
+button[type="submit"]:hover,
+#exportExcel:hover {
+  background: #283593;
+}
+#voiceBtn {
+  background: #ff9800;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+#voiceBtn:active {
+  background: #ffb74d;
+}
+#exportExcel {
+  background: #388e3c;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+#exportExcel:active {
+  background: #66bb6a;
+}
+section {
+  margin-bottom: 2rem;
+}
+h2 {
+  margin-top: 0;
+  color: #3f51b5;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+th, td {
+  border: 1px solid #eee;
+  padding: 0.6rem 0.4rem;
+  text-align: center;
+}
+th {
+  background: #f1f1f9;
+}
+tr:nth-child(even) td {
+  background: #fafbfc;
+}
+footer {
+  text-align: center;
+  color: #888;
+  margin: 2rem 0 1rem 0;
+  font-size: 0.95rem;
+}
+@media (max-width: 600px) {
+  main { padding: 1rem 0.3rem;}
+  form, .filter-section { flex-direction: column; gap: 0.8rem;}
+}
+// Data transaksi (masuk & keluar) tersimpan di localStorage
+let transaksi = JSON.parse(localStorage.getItem("transaksiList")) || [];
 
-# Google Services (e.g. APIs or Firebase)
-google-services.json
+// Elemen DOM
+const form = document.getElementById("transaksiForm");
+const jenisTransaksi = document.getElementById("jenisTransaksi");
+const namaBarang = document.getElementById("namaBarang");
+const jumlahBarang = document.getElementById("jumlahBarang");
+const voiceBtn = document.getElementById("voiceBtn");
+const transaksiList = document.getElementById("transaksiList");
+const rekapList = document.getElementById("rekapList");
+const filterStart = document.getElementById("filterStart");
+const filterEnd = document.getElementById("filterEnd");
+const resetFilter = document.getElementById("resetFilter");
+const exportExcel = document.getElementById("exportExcel");
 
-# Android Profiling
-*.hprof
+// State filter
+let filterStartValue = '';
+let filterEndValue = '';
+
+// Convert date string (id-ID) to YYYY-MM-DD (for filter)
+function toDateInputValue(dateString) {
+  // Format: 15/08/2025 22.30
+  const [d, m, yAndTime] = dateString.split('/');
+  const [y, time] = yAndTime.split(' ');
+  return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+}
+
+// Render seluruh tampilan
+function renderTransaksi() {
+  transaksiList.innerHTML = "";
+  // Filter tanggal
+  let filtered = transaksi;
+  if (filterStartValue) {
+    filtered = filtered.filter(item => {
+      let tgl = toDateInputValue(item.tanggal);
+      return tgl >= filterStartValue;
+    });
+  }
+  if (filterEndValue) {
+    filtered = filtered.filter(item => {
+      let tgl = toDateInputValue(item.tanggal);
+      return tgl <= filterEndValue;
+    });
+  }
+  filtered.forEach((item, index) => {
+    let row = `<tr>
+      <td>${item.tanggal}</td>
+      <td>${item.jenis === "masuk" ? "Masuk" : "Keluar"}</td>
+      <td>${item.nama}</td>
+      <td>${item.jumlah}</td>
+      <td><button onclick="hapusTransaksi(${transaksi.indexOf(item)})">Hapus</button></td>
+    </tr>`;
+    transaksiList.innerHTML += row;
+  });
+  renderRekap(filtered);
+}
+
+// Hitung dan tampilkan rekap stok per barang
+function renderRekap(filteredTransaksi = transaksi) {
+  rekapList.innerHTML = "";
+  let stok = {};
+  filteredTransaksi.forEach(item => {
+    if (!stok[item.nama]) stok[item.nama] = 0;
+    stok[item.nama] += item.jenis === "masuk" ? item.jumlah : -item.jumlah;
+  });
+  Object.entries(stok).forEach(([nama, jumlah]) => {
+    rekapList.innerHTML += `<tr>
+      <td>${nama}</td>
+      <td>${jumlah}</td>
+    </tr>`;
+  });
+}
+
+// Tambah transaksi baru
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  const item = {
+    tanggal: new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }),
+    jenis: jenisTransaksi.value,
+    nama: namaBarang.value.trim(),
+    jumlah: parseInt(jumlahBarang.value)
+  };
+  if (!item.nama || !item.jumlah || item.jumlah <= 0) return;
+  transaksi.push(item);
+  localStorage.setItem("transaksiList", JSON.stringify(transaksi));
+  form.reset();
+  renderTransaksi();
+});
+
+// Hapus transaksi
+window.hapusTransaksi = function(index) {
+  if (confirm("Yakin hapus transaksi ini?")) {
+    transaksi.splice(index, 1);
+    localStorage.setItem("transaksiList", JSON.stringify(transaksi));
+    renderTransaksi();
+  }
+};
+
+// Fitur input suara
+voiceBtn.addEventListener("click", () => {
+  if ('webkitSpeechRecognition' in window) {
+    let recognition = new webkitSpeechRecognition();
+    recognition.lang = "id-ID";
+    recognition.start();
+    recognition.onresult = function(event) {
+      let text = event.results[0][0].transcript.toLowerCase();
+      // Contoh ucapan: "Barang masuk pulpen 10" atau "Barang keluar buku 5"
+      let regex = /(masuk|keluar)\s+([a-zA-Z0-9\s]+)\s+(\d+)/;
+      let match = text.match(regex);
+      if (match) {
+        jenisTransaksi.value = match[1] === "masuk" ? "masuk" : "keluar";
+        namaBarang.value = match[2].trim();
+        jumlahBarang.value = match[3];
+      } else {
+        alert("Ucapkan dengan format: 'barang masuk/keluar [nama barang] [jumlah]'");
+      }
+    };
+  } else {
+    alert("Browser tidak mendukung input suara.");
+  }
+});
+
+// Filter tanggal
+filterStart.addEventListener('change', function() {
+  filterStartValue = this.value;
+  renderTransaksi();
+});
+filterEnd.addEventListener('change', function() {
+  filterEndValue = this.value;
+  renderTransaksi();
+});
+resetFilter.addEventListener('click', function() {
+  filterStart.value = '';
+  filterEnd.value = '';
+  filterStartValue = '';
+  filterEndValue = '';
+  renderTransaksi();
+});
+
+// Ekspor ke Excel
+exportExcel.addEventListener('click', function() {
+  // Ambil transaksi yang sedang difilter
+  let filtered = transaksi;
+  if (filterStartValue) {
+    filtered = filtered.filter(item => {
+      let tgl = toDateInputValue(item.tanggal);
+      return tgl >= filterStartValue;
+    });
+  }
+  if (filterEndValue) {
+    filtered = filtered.filter(item => {
+      let tgl = toDateInputValue(item.tanggal);
+      return tgl <= filterEndValue;
+    });
+  }
+  // Data untuk sheet
+  let data = [
+    ["Tanggal", "Jenis", "Nama Barang", "Jumlah"]
+  ];
+  filtered.forEach(item => {
+    data.push([
+      item.tanggal,
+      item.jenis === "masuk" ? "Masuk" : "Keluar",
+      item.nama,
+      item.jumlah
+    ]);
+  });
+  // Export dengan SheetJS
+  let ws = XLSX.utils.aoa_to_sheet(data);
+  let wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
+  XLSX.writeFile(wb, "riwayat_transaksi.xlsx");
+});
+
+// Render awal
+renderTransaksi();
